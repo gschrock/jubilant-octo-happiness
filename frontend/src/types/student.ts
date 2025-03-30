@@ -2,13 +2,13 @@ export interface IStudent {
   id?: number;
   name: string;
   email: string;
-  graduation_year: number;
+  graduation_year?: number;
   phone: string;
-  gpa: number;
+  gpa?: number;
   city: string;
   state: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   created_at: Date;
   updated_at?: Date;
 }
