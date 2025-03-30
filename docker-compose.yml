@@ -1,0 +1,74 @@
+version: '3.8'
+
+volumes:
+  db:
+
+services:
+  api:
+    container_name: student_app-api
+    image: student_app-api:${NODE_ENV:-development}
+    build:
+      target: development
+      context: ./backend
+      args:
+        APP_ENV: ${APP_ENV:-local}
+        NODE_ENV: ${NODE_ENV:-development}
+        SERVER_PORT: ${SERVER_PORT:-3000}
+    volumes:
+      - ./backend:/var/c3d/backend
+      - ./backend/node_modules:/var/c3d/backend/node_modules
+    ports:
+      - ${SERVER_PORT:-3000}:3000
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-student_user}
+      - DB_PASSWORD=${DB_PASSWORD:-student_password}
+      - DB_NAME=${DB_NAME:-student_db}
+      - DB_POOL_MAX=10
+      - DB_POOL_MIN=0
+      - DB_DEBUG=false
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ui:
+    container_name: student_app-ui
+    image: student_app-ui:${NODE_ENV:-development}
+    build:
+      target: final
+      context: ./frontend
+      args:
+        APP_ENV: ${APP_ENV:-local}
+        NODE_ENV: ${NODE_ENV:-development}
+    volumes:
+      - ./frontend:/var/c3d/frontend
+      - ./frontend/node_modules:/var/c3d/frontend/node_modules
+    ports:
+      - ${UI_PORT:-5173}:5173
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - VITE_API_URL=${API_URL:-http://localhost:3000}
+    depends_on:
+      - api
+
+  db:
+    container_name: student_app-db
+    image: mysql:8.0
+    volumes:
+      - db:/var/lib/mysql
+    ports:
+      - ${DB_PORT:-3306}:3306
+    user: root
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-student_db}
+      MYSQL_USER: ${MYSQL_USER:-student_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-student_password}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5 
