@@ -1,47 +1,119 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { z } from "zod";
 import { IStudent, IStudentFormData } from "./types/student";
 
 axios.defaults.baseURL = "http://localhost:3000";
 
-/**
- * @todo
- * move validation functions to a utils,
- * use validation library and standardize UX more
- */
-const validateEmail = (email: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-const validatePhone = (phone: string) => /^\d{10}$/.test(phone);
-const validateGPA = (gpa: number) => gpa >= 0 && gpa <= 4.0;
-const validateYear = (year: number) => {
-  const currentYear = new Date().getFullYear();
-  return year >= currentYear && year <= currentYear + 5;
-};
+const US_STATES = [
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" },
+];
+
+const studentFormSchema = z.object({
+  name: z.string().min(1, "Required"),
+  email: z.string().email("Invalid email format").min(1, "Required"),
+  phone: z
+    .string()
+    .min(1, "Phone is required")
+    .regex(
+      /^[\d\s().-]+$/,
+      "Phone must contain only numbers and valid phone characters"
+    )
+    /**
+     * @note
+     * Yes, would be good to align on those formats and validate for them.
+     * Keeping loose for now.
+     */
+    .min(10, "Phone must be in a valid format"),
+  graduation_year: z
+    .number()
+    .int("Must be a whole number")
+    .min(new Date().getFullYear(), "Year cannot be in the past")
+    .max(
+      new Date().getFullYear() + 5,
+      "Year cannot be more than 5 years in the future"
+    ),
+  gpa: z
+    .number()
+    .min(0, "GPA cannot be negative")
+    .max(4.0, "GPA cannot exceed 4.0"),
+  city: z.string().min(1, "Required"),
+  state: z.string().min(1, "Required"),
+});
 
 function App() {
   const [students, setStudents] = useState<IStudent[]>([]);
   const [formData, setFormData] = useState<IStudentFormData>({
-    name: "",
-    email: "",
-    phone: "",
-    graduation_year: undefined,
-    gpa: undefined,
-    city: "",
-    state: "",
-    latitude: undefined,
-    longitude: undefined,
+    // name: "",
+    // email: "",
+    // phone: "",
+    // graduation_year: undefined,
+    // gpa: undefined,
+    // city: "",
+    // state: "",
+    // latitude: undefined,
+    // longitude: undefined,
     /**
      * Mock data
      */
-    // name: "Test name",
-    // email: "test@mock.com",
-    // phone: "9999999999",
-    // graduation_year: 2026,
-    // gpa: 3.6,
-    // city: "Place",
-    // state: "ID",
-    // latitude: 90,
-    // longitude: 180,
+    name: "Test name",
+    email: "test@mock.com",
+    phone: "9999999999",
+    graduation_year: 2026,
+    gpa: 3.6,
+    city: "Place",
+    state: "ID",
+    latitude: 90,
+    longitude: 180,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -61,33 +133,33 @@ function App() {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    try {
+      // Convert form data to proper types for Zod validation
+      const dataToValidate = {
+        ...formData,
+        graduation_year: formData.graduation_year
+          ? Number(formData.graduation_year)
+          : undefined,
+        gpa: formData.gpa ? Number(formData.gpa) : undefined,
+        latitude: formData.latitude ? Number(formData.latitude) : undefined,
+        longitude: formData.longitude ? Number(formData.longitude) : undefined,
+      };
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Invalid email format";
+      studentFormSchema.parse(dataToValidate);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            newErrors[err.path[0]] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
     }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone is required";
-    } else if (!validatePhone(formData.phone)) {
-      newErrors.phone = "Phone must be 10 digits";
-    }
-    if (!formData.graduation_year || !validateYear(formData.graduation_year)) {
-      newErrors.graduation_year = "Invalid graduation year";
-    }
-    if (!formData.gpa || !validateGPA(formData.gpa)) {
-      newErrors.gpa = "GPA must be between 0 and 4.0";
-    }
-    /**
-     * @todo
-     * include more robust validation for:
-     * city, state, lat, long
-     */
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,10 +168,19 @@ function App() {
     if (!validateForm()) return;
 
     try {
+      // Prepare data with proper types
+      const submissionData = {
+        ...formData,
+        graduation_year: Number(formData.graduation_year),
+        gpa: formData.gpa ? Number(formData.gpa) : undefined,
+        latitude: formData.latitude ? Number(formData.latitude) : undefined,
+        longitude: formData.longitude ? Number(formData.longitude) : undefined,
+      };
+
       if (isEditing && currentStudentId) {
-        await axios.put(`/api/students/${currentStudentId}`, formData);
+        await axios.put(`/api/students/${currentStudentId}`, submissionData);
       } else {
-        await axios.post<IStudent>("/api/students", formData);
+        await axios.post<IStudent>("/api/students", submissionData);
       }
 
       resetForm();
@@ -146,13 +227,22 @@ function App() {
     const { name, value } = e.target;
 
     setFormData((prev) => {
-      // Convert strings to numbers for numeric value fields
+      // Handle numeric fields
       const numericFields = ["graduation_year", "gpa", "latitude", "longitude"];
       if (numericFields.includes(name)) {
-        return { ...prev, [name]: value === "" ? 0 : Number(value) };
+        return { ...prev, [name]: value === "" ? undefined : value };
       }
       return { ...prev, [name]: value };
     });
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   return (
@@ -168,7 +258,7 @@ function App() {
             htmlFor="name"
             className="block text-sm font-medium text-gray-700"
           >
-            Student Name*
+            Student Name
           </label>
           <input
             type="text"
@@ -179,7 +269,6 @@ function App() {
             className={`mt-1 block w-full rounded-md ${
               errors.name ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
           />
           {errors.name && (
             <p className="mt-1 text-sm text-red-600">{errors.name}</p>
@@ -191,10 +280,10 @@ function App() {
             htmlFor="email"
             className="block text-sm font-medium text-gray-700"
           >
-            Email Address*
+            Email Address
           </label>
           <input
-            type="email"
+            type="text"
             id="email"
             name="email"
             value={formData.email}
@@ -202,7 +291,6 @@ function App() {
             className={`mt-1 block w-full rounded-md ${
               errors.email ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
           />
           {errors.email && (
             <p className="mt-1 text-sm text-red-600">{errors.email}</p>
@@ -214,7 +302,7 @@ function App() {
             htmlFor="phone"
             className="block text-sm font-medium text-gray-700"
           >
-            Phone Number* (10 digits)
+            Phone Number
           </label>
           <input
             type="tel"
@@ -226,7 +314,6 @@ function App() {
             className={`mt-1 block w-full rounded-md ${
               errors.phone ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
           />
           {errors.phone && (
             <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
@@ -238,7 +325,7 @@ function App() {
             htmlFor="graduation_year"
             className="block text-sm font-medium text-gray-700"
           >
-            Graduation Year*
+            Graduation Year
           </label>
           <input
             type="number"
@@ -247,11 +334,10 @@ function App() {
             value={formData.graduation_year}
             onChange={handleInputChange}
             min={new Date().getFullYear()}
-            max={new Date().getFullYear() + 5}
+            max={9999}
             className={`mt-1 block w-full rounded-md ${
               errors.graduation_year ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
           />
           {errors.graduation_year && (
             <p className="mt-1 text-sm text-red-600">
@@ -265,7 +351,7 @@ function App() {
             htmlFor="gpa"
             className="block text-sm font-medium text-gray-700"
           >
-            GPA (0.0 - 4.0)
+            GPA
           </label>
           <input
             type="number"
@@ -273,13 +359,12 @@ function App() {
             name="gpa"
             value={formData.gpa}
             onChange={handleInputChange}
-            step="0.1"
-            min="0"
-            max="4.0"
+            step="0.01"
+            min="0.00"
+            max="4.00"
             className={`mt-1 block w-full rounded-md ${
               errors.gpa ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
           />
           {errors.gpa && (
             <p className="mt-1 text-sm text-red-600">{errors.gpa}</p>
@@ -302,7 +387,6 @@ function App() {
             className={`mt-1 block w-full rounded-md ${
               errors.city ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
           />
           {errors.city && (
             <p className="mt-1 text-sm text-red-600">{errors.city}</p>
@@ -316,67 +400,26 @@ function App() {
           >
             State
           </label>
-          <input
-            type="text"
+          <select
             id="state"
             name="state"
             value={formData.state}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setFormData({ ...formData, state: e.target.value })
+            }
             className={`mt-1 block w-full rounded-md ${
               errors.state ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
-          />
+          >
+            <option value="">Select a state</option>
+            {US_STATES.map((state) => (
+              <option key={state.code} value={state.code}>
+                {state.name}
+              </option>
+            ))}
+          </select>
           {errors.state && (
             <p className="mt-1 text-sm text-red-600">{errors.state}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="latitude"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Latitude
-          </label>
-          <input
-            type="number"
-            id="latitude"
-            name="latitude"
-            value={formData.latitude}
-            onChange={handleInputChange}
-            step="0.000001"
-            className={`mt-1 block w-full rounded-md ${
-              errors.latitude ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
-          />
-          {errors.latitude && (
-            <p className="mt-1 text-sm text-red-600">{errors.latitude}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="longitude"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Longitude
-          </label>
-          <input
-            type="number"
-            id="longitude"
-            name="longitude"
-            value={formData.longitude}
-            onChange={handleInputChange}
-            step="0.000001"
-            className={`mt-1 block w-full rounded-md ${
-              errors.longitude ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            required
-          />
-          {errors.longitude && (
-            <p className="mt-1 text-sm text-red-600">{errors.longitude}</p>
           )}
         </div>
 
