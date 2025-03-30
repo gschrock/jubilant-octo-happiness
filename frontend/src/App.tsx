@@ -1,18 +1,12 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { IStudent } from "./types/student";
 
-axios.defaults.baseURL = 'http://localhost:3000';
-
-interface Student {
-  id: number;
-  name: string;
-  created_at: string;
-  updated_at: string;
-}
+axios.defaults.baseURL = "http://localhost:3000";
 
 function App() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [name, setName] = useState('');
+  const [students, setStudents] = useState<IStudent[]>([]);
+  const [name, setName] = useState("");
 
   useEffect(() => {
     fetchStudents();
@@ -20,31 +14,34 @@ function App() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('/api/students');
+      const response = await axios.get("/api/students");
       setStudents(response.data);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error("Error fetching students:", error);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/students', { name });
-      setName('');
+      await axios.post("/api/students", { name });
+      setName("");
       fetchStudents();
     } catch (error) {
-      console.error('Error creating student:', error);
+      console.error("Error creating student:", error);
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Student Management System</h1>
-      
+
       <form onSubmit={handleSubmit} className="mb-8">
         <div className="mb-4">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700"
+          >
             Student Name
           </label>
           <input
@@ -68,10 +65,7 @@ function App() {
         <h2 className="text-xl font-semibold mb-4">Student List</h2>
         <div className="grid gap-4">
           {students.map((student) => (
-            <div
-              key={student.id}
-              className="border p-4 rounded-md shadow-sm"
-            >
+            <div key={student.id} className="border p-4 rounded-md shadow-sm">
               <p className="font-medium">{student.name}</p>
               <p className="text-sm text-gray-500">
                 Created: {new Date(student.created_at).toLocaleDateString()}
@@ -84,4 +78,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

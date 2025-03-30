@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { Knex } from "knex";
+import { IStudentFormData } from "types/student";
 
 // Random GPA generator
 const generateGPA = (): number => {
@@ -18,7 +19,7 @@ const generateGraduationYear = (): number => {
 export async function seed(knex: Knex): Promise<void> {
   await knex("students").del();
 
-  const students = [];
+  const students: IStudentFormData[] = [];
 
   for (let i = 0; i < 10; i++) {
     const state = faker.location.state({ abbreviated: true });
