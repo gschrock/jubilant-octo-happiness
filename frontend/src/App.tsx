@@ -13,24 +13,10 @@ function App() {
     name: "",
     email: "",
     phone: "",
-    graduation_year: undefined,
-    gpa: undefined,
+    graduation_year: "",
+    gpa: "",
     city: "",
     state: "",
-    latitude: undefined,
-    longitude: undefined,
-    /**
-     * Mock data
-     */
-    // name: "Test name",
-    // email: "test@mock.com",
-    // phone: "9999999999",
-    // graduation_year: 2026,
-    // gpa: 3.6,
-    // city: "Place",
-    // state: "ID",
-    // latitude: 90,
-    // longitude: 180,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -87,15 +73,13 @@ function App() {
       const submissionData = {
         ...formData,
         graduation_year: Number(formData.graduation_year),
-        gpa: formData.gpa ? Number(formData.gpa) : undefined,
-        latitude: formData.latitude ? Number(formData.latitude) : undefined,
-        longitude: formData.longitude ? Number(formData.longitude) : undefined,
+        gpa: Number(formData.gpa),
       };
 
       if (isEditing && currentStudentId) {
         await axios.put(`/api/students/${currentStudentId}`, submissionData);
       } else {
-        await axios.post<IStudent>("/api/students", submissionData);
+        await axios.post<IStudent>("/api/students/", submissionData);
       }
 
       resetForm();
@@ -110,12 +94,10 @@ function App() {
       name: "",
       email: "",
       phone: "",
-      graduation_year: undefined,
-      gpa: undefined,
+      graduation_year: "",
+      gpa: "",
       city: "",
       state: "",
-      latitude: undefined,
-      longitude: undefined,
     });
     setErrors({});
     setIsEditing(false);
@@ -131,8 +113,6 @@ function App() {
       gpa: student.gpa,
       city: student.city,
       state: student.state,
-      latitude: student.latitude,
-      longitude: student.longitude,
     });
     setIsEditing(true);
     setCurrentStudentId(student.id!);

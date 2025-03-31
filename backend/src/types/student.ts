@@ -13,5 +13,11 @@ export interface IStudent {
   updated_at?: Date;
 }
 
-export interface IStudentFormData
+export interface ISeedStudent
   extends Omit<IStudent, "id" | "created_at" | "updated_at"> {}
+
+export interface IStudentFormData
+  extends Omit<
+    IStudent,
+    "id" | "created_at" | "updated_at" | "latitude" | "longitude"
+  > {}

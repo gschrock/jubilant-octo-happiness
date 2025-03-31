@@ -6,7 +6,7 @@ const studentFormSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^[\d\s().-]+$/,
+      /^[\d\s().-]+(\s*(x|ext)\s*\d{1,5})?$/,
       "Phone must contain only numbers and valid phone characters"
     )
     /**

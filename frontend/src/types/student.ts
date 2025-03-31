@@ -2,16 +2,19 @@ export interface IStudent {
   id?: number;
   name: string;
   email: string;
-  graduation_year?: number;
+  graduation_year: string;
   phone: string;
-  gpa?: number;
+  gpa: string;
   city: string;
   state: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: string;
+  longitude?: string;
   created_at: Date;
   updated_at?: Date;
 }
 
 export interface IStudentFormData
-  extends Omit<IStudent, "id" | "created_at" | "updated_at"> {}
+  extends Omit<
+    IStudent,
+    "id" | "created_at" | "updated_at" | "latitude" | "longitude"
+  > {}
