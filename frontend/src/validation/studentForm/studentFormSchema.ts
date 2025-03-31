@@ -19,11 +19,7 @@ const studentFormSchema = z.object({
   graduation_year: z
     .number()
     .int("Must be a whole number")
-    .min(new Date().getFullYear(), "Year cannot be in the past")
-    .max(
-      new Date().getFullYear() + 5,
-      "Year cannot be more than 5 years in the future"
-    ),
+    .min(new Date().getFullYear(), "Year cannot be in the past"),
   gpa: z
     .number()
     .min(0, "GPA cannot be negative")

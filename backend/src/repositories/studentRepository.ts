@@ -46,6 +46,7 @@ const updateStudent = async (
 ) => {
   const existingStudentWithEmail = await db("students")
     .where({ email: studentData.email })
+    .whereNot({ id })
     .first();
 
   if (existingStudentWithEmail) {
