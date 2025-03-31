@@ -3,7 +3,8 @@ import axios from "axios";
 import { z } from "zod";
 import { IStudent, IStudentFormData } from "./types/student";
 import { studentFormSchema } from "./validation/studentForm/studentFormSchema";
-import { US_STATES } from "./const/usStates";
+import StudentList from "./components/StudentList/StudentList";
+import StudentForm from "./components/StudentForm/StudentForm";
 
 axios.defaults.baseURL = "http://localhost:3000";
 
@@ -140,257 +141,35 @@ function App() {
     }
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Student Management System</h1>
 
-      <form
+      <StudentForm
+        formData={formData}
+        errors={errors}
+        isEditing={isEditing}
+        onInputChange={handleInputChange}
+        onSelectChange={handleSelectChange}
         onSubmit={handleSubmit}
-        noValidate
-        className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4"
-      >
-        <div className="mb-4">
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Student Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className={`mt-1 block w-full rounded-md ${
-              errors.name ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-          )}
-        </div>
+        onReset={resetForm}
+      />
 
-        <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Email Address
-          </label>
-          <input
-            type="text"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            className={`mt-1 block w-full rounded-md ${
-              errors.email ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-          />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="phone"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Phone Number
-          </label>
-          <input
-            type="string"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            className={`mt-1 block w-full rounded-md ${
-              errors.phone ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-          />
-          {errors.phone && (
-            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="graduation_year"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Graduation Year
-          </label>
-          <input
-            type="number"
-            id="graduation_year"
-            name="graduation_year"
-            value={formData.graduation_year}
-            onChange={handleInputChange}
-            min={new Date().getFullYear()}
-            max={9999}
-            className={`mt-1 block w-full rounded-md ${
-              errors.graduation_year ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            onKeyDown={(e) => {
-              // Prevent symbols
-              if (e.key === "-" || e.key === "+" || e.key === "e")
-                e.preventDefault();
-            }}
-          />
-          {errors.graduation_year && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.graduation_year}
-            </p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="gpa"
-            className="block text-sm font-medium text-gray-700"
-          >
-            GPA
-          </label>
-          <input
-            type="number"
-            id="gpa"
-            name="gpa"
-            value={formData.gpa}
-            onChange={handleInputChange}
-            step="0.01"
-            min="0.00"
-            max="4.00"
-            className={`mt-1 block w-full rounded-md ${
-              errors.gpa ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-            onKeyDown={(e) => {
-              // Prevent symbols
-              if (e.key === "-" || e.key === "+" || e.key === "e")
-                e.preventDefault();
-            }}
-          />
-          {errors.gpa && (
-            <p className="mt-1 text-sm text-red-600">{errors.gpa}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="city"
-            className="block text-sm font-medium text-gray-700"
-          >
-            City
-          </label>
-          <input
-            type="text"
-            id="city"
-            name="city"
-            value={formData.city}
-            onChange={handleInputChange}
-            className={`mt-1 block w-full rounded-md ${
-              errors.city ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-          />
-          {errors.city && (
-            <p className="mt-1 text-sm text-red-600">{errors.city}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="state"
-            className="block text-sm font-medium text-gray-700"
-          >
-            State
-          </label>
-          <select
-            id="state"
-            name="state"
-            value={formData.state}
-            onChange={(e) =>
-              setFormData({ ...formData, state: e.target.value })
-            }
-            className={`mt-1 block w-full rounded-md ${
-              errors.state ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-          >
-            <option value="">Select a state</option>
-            {US_STATES.map((state) => (
-              <option key={state.code} value={state.code}>
-                {state.name}
-              </option>
-            ))}
-          </select>
-          {errors.state && (
-            <p className="mt-1 text-sm text-red-600">{errors.state}</p>
-          )}
-        </div>
-
-        <div className="md:col-span-2 flex gap-2">
-          <button
-            type="submit"
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-          >
-            {isEditing ? "Update Student" : "Add Student"}
-          </button>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Student List</h2>
-        {students.length === 0 ? (
-          <p className="text-gray-500">No students found</p>
-        ) : (
-          <div className="grid gap-4">
-            {students.map((student) => (
-              <div
-                key={student.id}
-                className="border p-4 rounded-md shadow-sm grid grid-cols-1 md:grid-cols-2 gap-2"
-              >
-                <div>
-                  <p className="font-medium">{student.name}</p>
-                  <p className="text-sm">{student.email}</p>
-                  <p className="text-sm">Phone: {student.phone}</p>
-                  <p className="text-sm">
-                    Grad Year: {student.graduation_year}
-                  </p>
-                  <p className="text-sm">GPA: {student.gpa}</p>
-                  {(student.city || student.state) && (
-                    <p className="text-sm">
-                      Location:{" "}
-                      {[student.city, student.state].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                  {(student.latitude || student.longitude) && (
-                    <p className="text-sm text-gray-500">
-                      Coordinates: {student.latitude}, {student.longitude}
-                    </p>
-                  )}
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => handleEdit(student)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 text-sm"
-                  >
-                    Edit
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <h2 className="text-xl font-semibold mb-4">Student List</h2>
+      <StudentList students={students} onEdit={handleEdit} />
     </div>
   );
 }
