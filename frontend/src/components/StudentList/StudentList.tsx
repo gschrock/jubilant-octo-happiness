@@ -3,10 +3,15 @@ import StudentCard from "../common/StudentCard";
 
 interface StudentListProps {
   students: IStudent[];
+  isLoading: boolean;
   onEdit: (student: IStudent) => void;
 }
 
-const StudentList = ({ students, onEdit }: StudentListProps) => {
+const StudentList = ({ students, isLoading, onEdit }: StudentListProps) => {
+  if (isLoading && !students.length) {
+    return <p>Loading students...</p>;
+  }
+
   if (students.length === 0) {
     return <p className="text-gray-500">No students found</p>;
   }

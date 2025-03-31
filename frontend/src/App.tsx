@@ -22,23 +22,29 @@ function App() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [currentStudentId, setCurrentStudentId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
   const fetchStudents = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const response = await axios.get<IStudent[]>("/api/students");
       setStudents(response.data);
     } catch (error) {
       console.error("Error fetching students:", error);
+      setError("Failed to fetch students. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const validateForm = (): boolean => {
     try {
-      // Convert form data to proper types for Zod validation
       const dataToValidate = {
         ...formData,
         graduation_year: formData.graduation_year
@@ -69,8 +75,9 @@ function App() {
 
     if (!validateForm()) return;
 
+    setIsLoading(true);
+    setError(null);
     try {
-      // Prepare data with proper types
       const submissionData = {
         ...formData,
         graduation_year: Number(formData.graduation_year),
@@ -84,9 +91,12 @@ function App() {
       }
 
       resetForm();
-      fetchStudents();
+      await fetchStudents();
     } catch (error) {
       console.error("Error saving student:", error);
+      setError("Failed to save student. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -110,8 +120,8 @@ function App() {
       name: student.name,
       email: student.email,
       phone: student.phone,
-      graduation_year: student.graduation_year,
-      gpa: student.gpa,
+      graduation_year: student.graduation_year.toString(),
+      gpa: student.gpa.toString(),
       city: student.city,
       state: student.state,
     });
@@ -123,7 +133,6 @@ function App() {
     const { name, value } = e.target;
 
     setFormData((prev) => {
-      // Handle numeric fields
       const numericFields = ["graduation_year", "gpa"];
       if (numericFields.includes(name)) {
         return { ...prev, [name]: value === "" ? undefined : value };
@@ -131,7 +140,6 @@ function App() {
       return { ...prev, [name]: value };
     });
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -158,6 +166,25 @@ function App() {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Student Management System</h1>
 
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <p className="text-lg font-semibold">Loading...</p>
+            <div className="mt-4 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <StudentForm
         formData={formData}
         errors={errors}
@@ -166,10 +193,19 @@ function App() {
         onSelectChange={handleSelectChange}
         onSubmit={handleSubmit}
         onReset={resetForm}
+        isLoading={isLoading}
       />
 
       <h2 className="text-xl font-semibold mb-4">Student List</h2>
-      <StudentList students={students} onEdit={handleEdit} />
+      {isLoading && !students.length ? (
+        <p>Loading students...</p>
+      ) : (
+        <StudentList
+          students={students}
+          onEdit={handleEdit}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 }
