@@ -94,6 +94,11 @@ function App() {
       await fetchStudents();
     } catch (error) {
       console.error("Error saving student:", error);
+      /**
+       * @todo
+       * better error handling depending on scenario for user
+       * e.g. email already in use, etc.
+       */
       setError("Failed to save student. Please try again.");
     } finally {
       setIsLoading(false);
